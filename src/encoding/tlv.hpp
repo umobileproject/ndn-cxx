@@ -30,6 +30,11 @@
 #include "buffer.hpp"
 #include "endian.hpp"
 
+#include <android/log.h>
+#define LOG_TAG "DEBLOA-tlv"
+
+#define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+
 namespace ndn {
 
 /** @brief practical limit of network layer packet size
@@ -242,19 +247,24 @@ template<class InputIterator>
 inline bool
 readVarNumber(InputIterator& begin, const InputIterator& end, uint64_t& number)
 {
-  if (begin == end)
-    return false;
+  if (begin == end){
+    //LOGD("begin == end");
+    return false;}
 
   uint8_t firstOctet = *begin;
+  //LOGD("first octet is: %d",firstOctet);
   ++begin;
   if (firstOctet < 253)
     {
       number = firstOctet;
+      //LOGD("<253");
     }
   else if (firstOctet == 253)
     {
-      if (end - begin < 2)
-        return false;
+      //LOGD("253");
+      if (end - begin < 2){
+        //LOGD("end - begin < 2");
+        return false;}
 
       uint16_t value = *reinterpret_cast<const uint16_t*>(&*begin);
       begin += 2;

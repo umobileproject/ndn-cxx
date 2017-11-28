@@ -31,6 +31,13 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/asio/buffer.hpp>
 
+#include <android/log.h>
+#include <inttypes.h>
+
+#define LOG_TAG "DEBLOA-Block"
+
+#define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+
 namespace ndn {
 
 #if NDN_CXX_HAVE_IS_NOTHROW_MOVE_CONSTRUCTIBLE
@@ -248,7 +255,7 @@ Block::fromStream(std::istream& is)
 
   return makeBinaryBlock(type, buf, length);
 }
-
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 std::tuple<bool, Block>
 Block::fromBuffer(ConstBufferPtr buffer, size_t offset)
 {
@@ -275,22 +282,89 @@ Block::fromBuffer(ConstBufferPtr buffer, size_t offset)
 std::tuple<bool, Block>
 Block::fromBuffer(const uint8_t* buffer, size_t maxSize)
 {
+  //LOGD("------------------");
+  //LOGD("buffer first is %d", *buffer);
+  const uint8_t *temp = buffer;
+  ++temp;
+  //LOGD("buffer second is %d", *temp);
+  ++temp;
+  //LOGD("buffer third is %d", *temp);
+  ++temp;
+  //LOGD("buffer fourth is %d", *temp);
+  //LOGD("buffer size is %zu", maxSize);
+
   const uint8_t* tempBegin = buffer;
   const uint8_t* tempEnd = buffer + maxSize;
+  //LOGD("tempBegin is %p ", tempBegin);
+  //LOGD("tempEnd is %p ", tempEnd);
 
+  //std::string read(buffer,buffer+maxSize);
+  //LOGD("-------CONTENT IS: %s", read.c_str());
+/*
+  LOGD("============================== 'ITERATOR' ==============================");
+  //stupid
+  int bufSize = static_cast<int>(maxSize);
+  temp--;
+  if (bufSize%10 == 0){
+    for (int i = 0; i < bufSize; i = i+10){
+            LOGD("%d %d %d %d %d %d %d %d %d %d", *temp,*(temp+1),*(temp+2),*(temp+3),*(temp+4),*(temp+5),*(temp+6),*(temp+7),*(temp+8),*(temp+9));
+            temp = temp + 10;
+    }
+  }else if(bufSize%9 == 0){
+    for (int i = 0; i < bufSize; i = i+9){
+            LOGD("%d %d %d %d %d %d %d %d %d", *temp,*(temp+1),*(temp+2),*(temp+3),*(temp+4),*(temp+5),*(temp+6),*(temp+7),*(temp+8));
+            temp = temp + 9;
+    }
+  }else if(bufSize%8 == 0){
+    for (int i = 0; i < bufSize; i = i+8){
+            LOGD("%d %d %d %d %d %d %d %d", *temp,*(temp+1),*(temp+2),*(temp+3),*(temp+4),*(temp+5),*(temp+6),*(temp+7));
+            temp = temp + 8;
+    }
+  }else if(bufSize%7 == 0){
+    for (int i = 0; i < bufSize; i = i+7){
+            LOGD("%d %d %d %d %d %d %d", *temp,*(temp+1),*(temp+2),*(temp+3),*(temp+4),*(temp+5),*(temp+6));
+            temp = temp + 7;
+    }
+  }else if(bufSize%6 == 0){
+    for (int i = 0; i < bufSize; i = i+6){
+            LOGD("%d %d %d %d %d %d", *temp,*(temp+1),*(temp+2),*(temp+3),*(temp+4),*(temp+5));
+            temp = temp + 6;
+    }
+  }else if(bufSize%5 == 0){
+    for (int i = 0; i < bufSize; i = i+5){
+            LOGD("%d %d %d %d %d", *temp,*(temp+1),*(temp+2),*(temp+3),*(temp+4));
+            temp = temp + 5;
+    }
+  }else{
+    for (int i = 0; i < bufSize; i++){
+            LOGD("%d", *temp);
+            temp++;
+    }
+  }
+  LOGD("============================ 'ITERATOR END' ============================");
+*/
   uint32_t type = 0;
   bool isOk = tlv::readType(tempBegin, tempEnd, type);
-  if (!isOk)
+  if (!isOk){
+    //LOGD("!isOk1");
     return std::make_tuple(false, Block());
+  }
+  LOGD("TYPE is %" PRIu32  , type);
 
   uint64_t length;
   isOk = tlv::readVarNumber(tempBegin, tempEnd, length);
-  if (!isOk)
+  if (!isOk){
+    //LOGD("!isOk2");
     return std::make_tuple(false, Block());
+  }
+  //LOGD("real LENGTH (w/o TL) is: %" PRIu64  , length);
 
-  if (length > static_cast<uint64_t>(tempEnd - tempBegin))
+  //LOGD("tempEnd - tempBegin is: %d", (tempEnd - tempBegin));
+
+  if (length > static_cast<uint64_t>(tempEnd - tempBegin)){
+    //LOGD("!isOk3 - Length > (tempEnd - tempBegin)");
     return std::make_tuple(false, Block());
-
+  }
   BufferPtr sharedBuffer = make_shared<Buffer>(buffer, tempBegin + length);
   return std::make_tuple(true,
          Block(sharedBuffer, type,
